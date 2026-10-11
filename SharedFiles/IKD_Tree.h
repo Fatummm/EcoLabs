@@ -70,8 +70,6 @@ typedef struct IKD_TreeVTbl {
         /* in  */ KDPointPtr_t point
     );
 
-    /* Typed builds. SearchKNearest, InsertPoint, DeletePoint and DestroyTree
-       work with the element type the tree was built with */
     int16_t (ECOCALLMETHOD *BuildTreeInt)(
         /* in  */ IKD_TreePtr_t me, 
         /* in  */ KDPointPtr_t* points, 

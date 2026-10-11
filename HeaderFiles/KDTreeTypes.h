@@ -10,11 +10,6 @@
 #define KD_TYPE_FLOAT       3   /* float     */
 #define KD_TYPE_DOUBLE      4   /* double    */
 
-/*
- * coords points to an array of `dimension` elements whose type is the one
- * the tree was built with (BuildTree - int16_t, BuildTreeInt - int,
- * BuildTreeLongLong - int64_t, BuildTreeFloat - float, BuildTreeDouble - double)
- */
 typedef struct {
     voidptr_t coords;
 } KDPoint, *KDPointPtr_t;

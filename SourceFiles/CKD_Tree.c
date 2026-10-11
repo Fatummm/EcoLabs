@@ -23,11 +23,6 @@
 #include "IEcoInterfaceBus1MemExt.h"
 #include "CKD_Tree.h"
 
-
-/* ============================================================ */
-/*                    Helper Functions                           */
-/* ============================================================ */
-
 /*
  *
  * <summary>
@@ -708,11 +703,6 @@ static KDNodePtr_t CKD_Tree_DeleteRecursive(
     return node;
 }
 
-
-/* ============================================================ */
-/*                 IEcoUnknown Interface Methods                 */
-/* ============================================================ */
-
 /*
  *
  * <summary>
@@ -798,11 +788,6 @@ static uint32_t ECOCALLMETHOD CKD_Tree_B0ABC511_Release(/* in */ IKD_TreePtr_t m
     }
     return pCMe->m_cRef;
 }
-
-
-/* ============================================================ */
-/*                   IKD_Tree Interface Methods                  */
-/* ============================================================ */
 
 /*
  *
@@ -1081,11 +1066,6 @@ static int16_t ECOCALLMETHOD CKD_Tree_B0ABC511_DeletePoint(/* in */ IKD_TreePtr_
     return ERR_ECO_SUCCESS;
 }
 
-
-/* ============================================================ */
-/*                Instance Lifecycle Functions                   */
-/* ============================================================ */
-
 /*
  *
  * <summary>
@@ -1234,11 +1214,6 @@ static void ECOCALLMETHOD deleteCKD_Tree_B0ABC511(/* in */ CKD_Tree_B0ABC511Ptr_
         pIMem->pVTbl->Release(pIMem);
     }
 }
-
-
-/* ============================================================ */
-/*                 VTable and Global Instance                    */
-/* ============================================================ */
 
 /* IKD_Tree Virtual Table */
 IKD_TreeVTbl g_xA1711225CF7045B6985ECA20A33CA463VTbl_B0ABC511 = {
