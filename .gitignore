@@ -1,0 +1,5 @@
+BuildFiles/*
+KernelFiles/*
+.vscode/*
+
+*.o

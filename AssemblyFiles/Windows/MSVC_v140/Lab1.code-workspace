@@ -1,0 +1,258 @@
+{
+	"folders": [
+		{ "path": ".", "name": "AssemblyFiles" },
+		{ "path": "../../../BuildFiles", "name": "BuildFiles" },
+		{ "path": "../../../DependenciesFiles" },
+		{ "path": "../../../DesignFiles" },
+		{ "path": "../../../HeaderFiles" },
+		{ "path": "../../../SharedFiles" },
+		{ "path": "../../../SourceFiles" },
+		{ "path": "../../../UnitTestFiles" }
+	],
+	"settings": {
+		"C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools",
+		"C_Cpp.default.cStandard": "c89",
+		"C_Cpp.default.includePath": [
+			"${workspaceFolder}/**",
+			"**/../../HeaderFiles",
+			"**/../../SharedFiles",
+			"**/../../DependenciesFiles/Eco.InterfaceBus1/SharedFiles",
+			"**/../../DependenciesFiles/Eco.StdIO.C89/SharedFiles",
+			"**/../../DependenciesFiles/Eco.StdLib.C89/SharedFiles",
+			"**/../../DependenciesFiles/Eco.Math.C89/SharedFiles",
+			"**/../../DependenciesFiles/Eco.MemoryManager1/SharedFiles",
+			"**/../../DependenciesFiles/Eco.String.C89/SharedFiles"
+		],
+		"makefile.configurations": [
+			{ "name": "Lab1 Static|x86 Debug", "makeArgs": ["TARGET=1", "ARCH=x86", "DEBUG=1"] },
+			{ "name": "Lab1 Static|x86 Release", "makeArgs": ["TARGET=1", "ARCH=x86", "DEBUG=0"] },
+			{ "name": "Lab1 Static|x64 Debug", "makeArgs": ["TARGET=1", "ARCH=x64", "DEBUG=1"] },
+			{ "name": "Lab1 Static|x64 Release", "makeArgs": ["TARGET=1", "ARCH=x64", "DEBUG=0"] },
+			{ "name": "Lab1 Dynamic|x86 Debug", "makeArgs": ["TARGET=0", "ARCH=x86", "DEBUG=1"] },
+			{ "name": "Lab1 Dynamic|x86 Release", "makeArgs": ["TARGET=0", "ARCH=x86", "DEBUG=0"] },
+			{ "name": "Lab1 Dynamic|x64 Debug", "makeArgs": ["TARGET=0", "ARCH=x64", "DEBUG=1"] },
+			{ "name": "Lab1 Dynamic|x64 Release", "makeArgs": ["TARGET=0", "ARCH=x64", "DEBUG=0"] },
+			{ "name": "Lab1UnitTest Static|x86 Debug", "makeArgs": ["-f", "MakefileExe", "TARGET=1", "ARCH=x86", "DEBUG=1"] },
+			{ "name": "Lab1UnitTest Static|x64 Debug", "makeArgs": ["-f", "MakefileExe", "TARGET=1", "ARCH=x64", "DEBUG=1"] },
+			{ "name": "Lab1UnitTest Dynamic|x86 Debug", "makeArgs": ["-f", "MakefileExe", "TARGET=0", "ARCH=x86", "DEBUG=1"] },
+			{ "name": "Lab1UnitTest Dynamic|x64 Debug", "makeArgs": ["-f", "MakefileExe", "TARGET=0", "ARCH=x64", "DEBUG=1"] }
+		]
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			{
+				"name": "DEBUG: Lab1UnitTest Static|x86",
+				"type": "cppvsdbg",
+				"request": "launch",
+				"program": "${workspaceFolder:BuildFiles}/Windows/x86/StaticDebug/Lab1.exe",
+				"cwd": "${workspaceFolder:BuildFiles}/Windows/x86/StaticDebug",
+				"preLaunchTask": "build Lab1UnitTest StaticDebug|x86"
+			},
+			{
+				"name": "DEBUG: Lab1UnitTest Static|x64",
+				"type": "cppvsdbg",
+				"request": "launch",
+				"program": "${workspaceFolder:BuildFiles}/Windows/x64/StaticDebug/Lab1.exe",
+				"cwd": "${workspaceFolder:BuildFiles}/Windows/x64/StaticDebug",
+				"preLaunchTask": "build Lab1UnitTest StaticDebug|x64"
+			},
+			{
+				"name": "DEBUG: Lab1UnitTest Dynamic|x86",
+				"type": "cppvsdbg",
+				"request": "launch",
+				"program": "${workspaceFolder:BuildFiles}/Windows/x86/DynamicDebug/Lab1.exe",
+				"cwd": "${workspaceFolder:BuildFiles}/Windows/x86/DynamicDebug",
+				"preLaunchTask": "build Lab1UnitTest DynamicDebug|x86"
+			},
+			{
+				"name": "DEBUG: Lab1UnitTest Dynamic|x64",
+				"type": "cppvsdbg",
+				"request": "launch",
+				"program": "${workspaceFolder:BuildFiles}/Windows/x64/DynamicDebug/Lab1.exe",
+				"cwd": "${workspaceFolder:BuildFiles}/Windows/x64/DynamicDebug",
+				"preLaunchTask": "build Lab1UnitTest DynamicDebug|x64"
+			}
+		]
+	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"label": "build all configurations",
+				"type": "shell",
+				"command": "make",
+			"args": [ "-f", "MakefileExe" ],
+				"group": { "kind": "build", "isDefault": true },
+				"presentation": { "echo": true, "reveal": "always", "focus": false, "panel": "shared" },
+				"problemMatcher": []
+			},
+			{
+				"label": "build Lab1 StaticDebug|x86",
+				"type": "shell",
+				"command": "call \"${env:MSVS_BT_ROOT}VC\\Auxiliary\\Build\\vcvarsall.bat\" x86 && make",
+				"args": [ "-f", "MakefileExe", "TARGET=1", "DEBUG=1", "ARCH=x86" ],
+				"group": "build",
+				"presentation": { "echo": true, "reveal": "silent", "focus": false, "panel": "shared" },
+				"options": { "env": { "MSYS_NO_PATHCONV": "1" }, "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },				
+				"problemMatcher": [ "$msCompile" ]
+			},
+			{
+				"label": "build Lab1 StaticRelease|x86",
+				"type": "shell",
+				"command": "call \"${env:MSVS_BT_ROOT}VC\\Auxiliary\\Build\\vcvarsall.bat\" x86 && make",
+				"args": [ "-f", "MakefileExe", "TARGET=1", "DEBUG=0", "ARCH=x86" ],
+				"group": "build",
+				"presentation": { "echo": true, "reveal": "silent", "focus": false, "panel": "shared" },
+				"options": { "env": { "MSYS_NO_PATHCONV": "1" }, "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },				
+				"problemMatcher": [ "$msCompile" ]
+			},
+			{
+				"label": "build Lab1 DynamicDebug|x86",
+				"type": "shell",
+				"command": "call \"${env:MSVS_BT_ROOT}VC\\Auxiliary\\Build\\vcvarsall.bat\" x86 && make",
+				"args": [ "-f", "MakefileExe", "TARGET=0", "DEBUG=1", "ARCH=x86" ],
+				"group": "build",
+				"presentation": { "echo": true, "reveal": "silent", "focus": false, "panel": "shared" },
+				"options": { "env": { "MSYS_NO_PATHCONV": "1" }, "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },				
+				"problemMatcher": [ "$msCompile" ]
+			},
+			{
+				"label": "build Lab1 DynamicRelease|x86",
+				"type": "shell",
+				"command": "call \"${env:MSVS_BT_ROOT}VC\\Auxiliary\\Build\\vcvarsall.bat\" x86 && make",
+				"args": [ "-f", "MakefileExe", "TARGET=0", "DEBUG=0", "ARCH=x86" ],
+				"group": "build",
+				"presentation": { "echo": true, "reveal": "silent", "focus": false, "panel": "shared" },
+				"options": { "env": { "MSYS_NO_PATHCONV": "1" }, "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },				
+				"problemMatcher": [ "$msCompile" ]
+			},
+			{
+				"label": "build Lab1 StaticDebug|x64",
+				"type": "shell",
+				"command": "call \"${env:MSVS_BT_ROOT}VC\\Auxiliary\\Build\\vcvarsall.bat\" x64 && make",
+				"args": [ "-f", "MakefileExe", "TARGET=1", "DEBUG=1", "ARCH=x64" ],
+				"group": "build",
+				"presentation": { "echo": true, "reveal": "silent", "focus": false, "panel": "shared" },
+				"options": { "env": { "MSYS_NO_PATHCONV": "1" }, "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },				
+				"problemMatcher": [ "$msCompile" ]
+			},
+			{
+				"label": "build Lab1 StaticRelease|x64",
+				"type": "shell",
+				"command": "call \"${env:MSVS_BT_ROOT}VC\\Auxiliary\\Build\\vcvarsall.bat\" x64 && make",
+				"args": [ "-f", "MakefileExe", "TARGET=1", "DEBUG=0", "ARCH=x64" ],
+				"group": "build",
+				"presentation": { "echo": true, "reveal": "silent", "focus": false, "panel": "shared" },
+				"options": { "env": { "MSYS_NO_PATHCONV": "1" }, "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },				
+				"problemMatcher": [ "$msCompile" ]
+			},
+			{
+				"label": "build Lab1 DynamicDebug|x64",
+				"type": "shell",
+				"command": "call \"${env:MSVS_BT_ROOT}VC\\Auxiliary\\Build\\vcvarsall.bat\" x64 && make",
+				"args": [ "-f", "MakefileExe", "TARGET=0", "DEBUG=1", "ARCH=x64" ],
+				"group": "build",
+				"presentation": { "echo": true, "reveal": "silent", "focus": false, "panel": "shared" },
+				"options": { "env": { "MSYS_NO_PATHCONV": "1" }, "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },				
+				"problemMatcher": [ "$msCompile" ]
+			},
+			{
+				"label": "build Lab1 DynamicRelease|x64",
+				"type": "shell",
+				"command": "call \"${env:MSVS_BT_ROOT}VC\\Auxiliary\\Build\\vcvarsall.bat\" x64 && make",
+				"args": [ "-f", "MakefileExe", "TARGET=0", "DEBUG=0", "ARCH=x64" ],
+				"group": "build",
+				"presentation": { "echo": true, "reveal": "silent", "focus": false, "panel": "shared" },
+				"options": { "env": { "MSYS_NO_PATHCONV": "1" }, "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },				
+				"problemMatcher": [ "$msCompile" ]
+			},
+			{
+				"label": "build Lab1UnitTest StaticDebug|x86",
+				"type": "shell",
+				"command": "call \"${env:MSVS_BT_ROOT}VC\\Auxiliary\\Build\\vcvarsall.bat\" x86 && make",
+				"args": [ "-f", "MakefileExe", "TARGET=1", "DEBUG=1", "ARCH=x86" ],
+				"group": "build",
+				"dependsOn": ["build Lab1 StaticDebug|x86"],
+				"options": { "env": { "MSYS_NO_PATHCONV": "1" }, "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },				
+				"problemMatcher": [ "$msCompile" ]
+			},
+			{
+				"label": "build Lab1UnitTest StaticRelease|x86",
+				"type": "shell",
+				"command": "call \"${env:MSVS_BT_ROOT}VC\\Auxiliary\\Build\\vcvarsall.bat\" x86 && make",
+				"args": [ "-f", "MakefileExe", "TARGET=1", "DEBUG=0", "ARCH=x86" ],
+				"group": "build",
+				"dependsOn": ["build Lab1 StaticRelease|x86"],
+				"options": { "env": { "MSYS_NO_PATHCONV": "1" }, "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },				
+				"problemMatcher": [ "$msCompile" ]
+			},
+			{
+				"label": "build Lab1UnitTest DynamicDebug|x86",
+				"type": "shell",
+				"command": "call \"${env:MSVS_BT_ROOT}VC\\Auxiliary\\Build\\vcvarsall.bat\" x86 && make",
+				"args": ["-f", "MakefileExe", "TARGET=0", "DEBUG=1", "ARCH=x86" ],
+				"group": "build",
+				"dependsOn": ["build Lab1 DynamicDebug|x86"],
+				"options": { "env": { "MSYS_NO_PATHCONV": "1" }, "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },				
+				"problemMatcher": [ "$msCompile" ]
+			},
+			{
+				"label": "build Lab1UnitTest DynamicRelease|x86",
+				"type": "shell",
+				"command": "call \"${env:MSVS_BT_ROOT}VC\\Auxiliary\\Build\\vcvarsall.bat\" x86 && make",
+				"args": [ "-f", "MakefileExe", "TARGET=0", "DEBUG=0", "ARCH=x86" ],
+				"group": "build",
+				"dependsOn": ["build Lab1 DynamicRelease|x86"],
+				"options": { "env": { "MSYS_NO_PATHCONV": "1" }, "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },				
+				"problemMatcher": [ "$msCompile" ]
+			},
+			{
+				"label": "build Lab1UnitTest StaticDebug|x64",
+				"type": "shell",
+				"command": "call \"${env:MSVS_BT_ROOT}VC\\Auxiliary\\Build\\vcvarsall.bat\" x64 && make",
+				"args": [ "-f", "MakefileExe", "TARGET=1", "DEBUG=1", "ARCH=x64" ],
+				"group": "build",
+				"dependsOn": ["build Lab1 StaticDebug|x64"],
+				"options": { "env": { "MSYS_NO_PATHCONV": "1" }, "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },				
+				"problemMatcher": [ "$msCompile" ]
+			},
+			{
+				"label": "build Lab1UnitTest StaticRelease|x64",
+				"type": "shell",
+				"command": "call \"${env:MSVS_BT_ROOT}VC\\Auxiliary\\Build\\vcvarsall.bat\" x64 && make",
+				"args": [ "-f", "MakefileExe", "TARGET=1", "DEBUG=0", "ARCH=x64" ],
+				"group": "build",
+				"dependsOn": ["build Lab1 StaticRelease|x64"],
+				"options": { "env": { "MSYS_NO_PATHCONV": "1" }, "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },				
+				"problemMatcher": [ "$msCompile" ]
+			},
+			{
+				"label": "build Lab1UnitTest DynamicDebug|x64",
+				"type": "shell",
+				"command": "call \"${env:MSVS_BT_ROOT}VC\\Auxiliary\\Build\\vcvarsall.bat\" x64 && make",
+				"args": [ "-f", "MakefileExe", "TARGET=0", "DEBUG=1", "ARCH=x64" ],
+				"group": "build",
+				"dependsOn": ["build Lab1 DynamicDebug|x64"],
+				"options": { "env": { "MSYS_NO_PATHCONV": "1" }, "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },				
+				"problemMatcher": [ "$msCompile" ]
+			},
+			{
+				"label": "build Lab1UnitTest DynamicRelease|x64",
+				"type": "shell",
+				"command": "call \"${env:MSVS_BT_ROOT}VC\\Auxiliary\\Build\\vcvarsall.bat\" x64 && make",
+				"args": [ "-f", "MakefileExe", "TARGET=0", "DEBUG=0", "ARCH=x64" ],
+				"group": "build",
+				"dependsOn": ["build Lab1 DynamicRelease|x64"],
+				"options": { "env": { "MSYS_NO_PATHCONV": "1" }, "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] } },				
+				"problemMatcher": [ "$msCompile" ]
+			},
+			{
+				"label": "Clean All",
+				"type": "shell",
+				"command": "call make clean",
+				"options": { "cwd": "${workspaceFolder:AssemblyFiles}" }
+			}
+		]
+	}
+}
