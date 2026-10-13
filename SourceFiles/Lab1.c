@@ -25,67 +25,13 @@
 #include "IdEcoFileSystemManagement1.h"
 #include "IdEcoStdIOC89.h"
 #include "IEcoStdIOC89.h"
-#include "CKD_Tree.h"
+#include "IdKD_Tree.h"
 #include "CKD_Tree_Test.h"
 
 #define TEST_POINT_COUNT 15
 #define TEST_DIMENSION 3
 #define TEST_K 4
 
-/*
- *
- * <summary>
- *   PrintPoint Function
- * </summary>
- *
- * <description>
- *   Prints int64_t coordinates of a point as (x, y, z)
- * </description>
- *
- */
-static void PrintPoint(IEcoStdIOC89* pIStdIO, int64_t* coords, uint16_t dimension) {
-    uint16_t i;
-
-    if (pIStdIO == 0 || coords == 0) {
-        return;
-    }
-
-    pIStdIO->pVTbl->printf(pIStdIO, "(");
-    for (i = 0; i < dimension; i++) {
-        pIStdIO->pVTbl->printf(pIStdIO, i == 0 ? "%lld" : ", %lld", coords[i]);
-    }
-    pIStdIO->pVTbl->printf(pIStdIO, ")");
-}
-
-/*
- *
- * <summary>
- *   PrintTree Function
- * </summary>
- *
- * <description>
- *   Recursively prints the KD-tree: one node per line, indented by depth,
- *   with the splitting axis of each node
- * </description>
- *
- */
-static void PrintTree(IEcoStdIOC89* pIStdIO, KDNodePtr_t node, uint16_t dimension, int16_t depth, const char_t* label) {
-    int16_t i;
-
-    if (pIStdIO == 0 || node == 0 || label == 0 || dimension == 0) {
-        return;
-    }
-
-    for (i = 0; i < depth; i++) {
-        pIStdIO->pVTbl->printf(pIStdIO, "    ");
-    }
-    pIStdIO->pVTbl->printf(pIStdIO, "%s [axis %d] ", label, depth % (int16_t)dimension);
-    PrintPoint(pIStdIO, (int64_t*)node->point.coords, dimension);
-    pIStdIO->pVTbl->printf(pIStdIO, "\n");
-
-    PrintTree(pIStdIO, node->left, dimension, depth + 1, "L");
-    PrintTree(pIStdIO, node->right, dimension, depth + 1, "R");
-}
 /*
  *
  * <summary>
@@ -107,8 +53,7 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
     IEcoMemoryAllocator1* pIMem = 0;
     IEcoStdIOC89* pIStdIO = 0;
     char_t* name = 0;
-    /* KD_Tree component */
-    CKD_Tree_B0ABC511* pCKDTree = 0;
+    /* KD_Tree component — interface pointer only */
     IKD_Tree* pIKDTree = 0;
     /* Test data: 15 points, dimension 3, int64_t coordinates */
     int64_t coords[TEST_POINT_COUNT][TEST_DIMENSION] = {
@@ -134,6 +79,7 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
     KDPoint query;
     KDSearchResult searchResult = { 0, 0, 0 };
     int16_t i = 0;
+    uint16_t d = 0;
     int16_t testsFailed = 0;
 
     /* Pointer Validation */
@@ -166,14 +112,14 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
         goto Release;
     }
 
-    /* Регистрация компонента StdIOC89 на шине */
+    /* Registering the StdIOC89 component on the bus */
     result = pIBus->pVTbl->RegisterComponent(
         pIBus,
         &CID_EcoStdIOC89,
         (IEcoUnknown*)GetIEcoComponentFactoryPtr_00000000000000000000000053494F31
     );
     if (result != 0) {
-        result = 200;  /* registration failed */
+        result = 200;
         goto Release;
     }
 
@@ -184,8 +130,19 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
 
     pIStdIO->pVTbl->printf(pIStdIO, "Hello from EcoMain! Number = %d\n", 42);
 
-    /* KD_Tree component creation and initialization */
-    result = CKD_Tree_B0ABC511_CreateInstance((IEcoUnknown*)pISys, 0, &pIKDTree);
+    /* Registering the KD_Tree component on the bus */
+    result = pIBus->pVTbl->RegisterComponent(
+        pIBus,
+        &CID_KD_Tree,
+        (IEcoUnknown*)GetIEcoComponentFactoryPtr_B0ABC511000000000000000000000000
+    );
+    if (result != 0) {
+        pIStdIO->pVTbl->printf(pIStdIO, "KD_Tree: registration failed, result = %d\n", result);
+        goto Release;
+    }
+
+    /* Creating KD_Tree component through QueryInterface */
+    result = pIBus->pVTbl->QueryComponent(pIBus, &CID_KD_Tree, 0, &IID_IKD_Tree, (void**)&pIKDTree);
     if (result != 0 || pIKDTree == 0) {
         pIStdIO->pVTbl->printf(pIStdIO, "KD_Tree: creation failed, result = %d\n", result);
         pIKDTree = 0;
@@ -194,7 +151,6 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
         }
         goto Release;
     }
-    pCKDTree = (CKD_Tree_B0ABC511*)pIKDTree;
     pIStdIO->pVTbl->printf(pIStdIO, "KD_Tree: component initialized\n\n");
 
     /* Input points */
@@ -202,25 +158,24 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
     for (i = 0; i < TEST_POINT_COUNT; i++) {
         points[i].coords = coords[i];
         pPoints[i] = &points[i];
-        pIStdIO->pVTbl->printf(pIStdIO, "  [%2d] ", i);
-        PrintPoint(pIStdIO, coords[i], TEST_DIMENSION);
-        pIStdIO->pVTbl->printf(pIStdIO, "\n");
+        pIStdIO->pVTbl->printf(pIStdIO, "  [%2d] (", i);
+        for (d = 0; d < TEST_DIMENSION; d++) {
+            pIStdIO->pVTbl->printf(pIStdIO, d == 0 ? "%lld" : ", %lld", coords[i][d]);
+        }
+        pIStdIO->pVTbl->printf(pIStdIO, ")\n");
     }
 
     /* Building the tree */
     result = pIKDTree->pVTbl->BuildTreeLongLong(pIKDTree, pPoints, TEST_POINT_COUNT, TEST_DIMENSION);
-    pIStdIO->pVTbl->printf(pIStdIO, "\nBuildTreeLongLong: result = %d, points in tree = %d\n", result, (int)pCKDTree->m_pointCount);
+    pIStdIO->pVTbl->printf(pIStdIO, "\nBuildTreeLongLong: result = %d\n", result);
     if (result != 0) {
         goto Release;
     }
-    pIStdIO->pVTbl->printf(pIStdIO, "Built tree (L - left subtree, R - right subtree):\n");
-    PrintTree(pIStdIO, pCKDTree->m_pRoot, TEST_DIMENSION, 0, "ROOT");
 
     /* Searching for k nearest neighbours */
     query.coords = queryCoords;
-    pIStdIO->pVTbl->printf(pIStdIO, "\nSearchKNearest: k = %d, query = ", TEST_K);
-    PrintPoint(pIStdIO, queryCoords, TEST_DIMENSION);
-    pIStdIO->pVTbl->printf(pIStdIO, "\n");
+    pIStdIO->pVTbl->printf(pIStdIO, "\nSearchKNearest: k = %d, query = (%lld, %lld, %lld)\n",
+        TEST_K, queryCoords[0], queryCoords[1], queryCoords[2]);
     result = pIKDTree->pVTbl->SearchKNearest(pIKDTree, &query, TEST_K, &searchResult);
     pIStdIO->pVTbl->printf(pIStdIO, "SearchKNearest: result = %d\n", result);
     if (result != 0 || searchResult.points == 0 || searchResult.distances == 0) {
@@ -231,9 +186,11 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
     }
     pIStdIO->pVTbl->printf(pIStdIO, "Found %d neighbours (unordered):\n", searchResult.count);
     for (i = 0; i < (int16_t)searchResult.count; i++) {
-        pIStdIO->pVTbl->printf(pIStdIO, "  ");
-        PrintPoint(pIStdIO, (int64_t*)searchResult.points[i]->coords, TEST_DIMENSION);
-        pIStdIO->pVTbl->printf(pIStdIO, "  squared distance = %.0f\n", searchResult.distances[i]);
+        pIStdIO->pVTbl->printf(pIStdIO, "  (");
+        for (d = 0; d < TEST_DIMENSION; d++) {
+            pIStdIO->pVTbl->printf(pIStdIO, d == 0 ? "%lld" : ", %lld", ((int64_t*)searchResult.points[i]->coords)[d]);
+        }
+        pIStdIO->pVTbl->printf(pIStdIO, ")  squared distance = %.0f\n", searchResult.distances[i]);
     }
     pIMem->pVTbl->Free(pIMem, searchResult.points);
     pIMem->pVTbl->Free(pIMem, searchResult.distances);

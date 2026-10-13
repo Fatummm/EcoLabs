@@ -146,6 +146,7 @@ LIBS = $(LIB_DIR) $(LIBS_TARGET)
 # --- Source and Object Files ---
 SRC_C = ..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)Lab1.c \
 ..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)CKD_Tree.c \
+..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)CKD_TreeFactory.c \
 ..$(SLASH)..$(SLASH)..$(SLASH)UnitTestFiles$(SLASH)CKD_Tree_Test.c
 SRC_S = 
 
