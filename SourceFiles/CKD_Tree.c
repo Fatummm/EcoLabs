@@ -22,6 +22,10 @@
 #include "IEcoInterfaceBus1.h"
 #include "IEcoInterfaceBus1MemExt.h"
 #include "CKD_Tree.h"
+#include "CEcoCalculatorA.h"
+#include "CEcoCalculatorD.h"
+
+#include <stddef.h>
 
 /*
  *
@@ -714,28 +718,68 @@ static KDNodePtr_t CKD_Tree_DeleteRecursive(
  * </description>
  *
  */
-static int16_t ECOCALLMETHOD CKD_Tree_B0ABC511_QueryInterface(/* in */ IKD_TreePtr_t me, /* in */ const UGUID* riid, /* out */ void** ppv) {
-    CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)me;
+/* --- Non-delegating IEcoUnknown (for aggregation support) --- */
 
-    /* Pointer Validation */
+static int16_t ECOCALLMETHOD CKD_Tree_B0ABC511_NondelegatingQI(/* in */ IEcoUnknownPtr_t me, /* in */ const UGUID* riid, /* out */ void** ppv) {
+    CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)((char_t*)me - offsetof(CKD_Tree_B0ABC511, m_pVTblINondelegatingUnk));
+
     if (me == 0 || riid == 0 || ppv == 0) {
         return ERR_ECO_POINTER;
     }
 
-    /* Validate and retrieve requested interface */
     if ( IsEqualUGUID(riid, &IID_IKD_Tree) ) {
         *ppv = &pCMe->m_pVTblIKD_Tree;
-        pCMe->m_pVTblIKD_Tree->AddRef((IKD_Tree*)pCMe);
     }
     else if ( IsEqualUGUID(riid, &IID_IEcoUnknown) ) {
-        *ppv = &pCMe->m_pVTblIKD_Tree;
-        pCMe->m_pVTblIKD_Tree->AddRef((IKD_Tree*)pCMe);
+        *ppv = &pCMe->m_pVTblINondelegatingUnk;
+    }
+    else if ( IsEqualUGUID(riid, &IID_IEcoCalculatorX) ) {
+        *ppv = &pCMe->m_pVTblIEcoCalculatorX;
+    }
+    else if ( IsEqualUGUID(riid, &IID_IEcoCalculatorY) ) {
+        *ppv = &pCMe->m_pVTblIEcoCalculatorY;
     }
     else {
         *ppv = 0;
         return ERR_ECO_NOINTERFACE;
     }
+    ++pCMe->m_cRef;
     return ERR_ECO_SUCCESS;
+}
+
+static uint32_t ECOCALLMETHOD CKD_Tree_B0ABC511_NondelegatingAddRef(/* in */ IEcoUnknownPtr_t me) {
+    CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)((char_t*)me - offsetof(CKD_Tree_B0ABC511, m_pVTblINondelegatingUnk));
+    if (me == 0) return -1;
+    return ++pCMe->m_cRef;
+}
+
+static uint32_t ECOCALLMETHOD CKD_Tree_B0ABC511_NondelegatingRelease(/* in */ IEcoUnknownPtr_t me) {
+    CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)((char_t*)me - offsetof(CKD_Tree_B0ABC511, m_pVTblINondelegatingUnk));
+    if (me == 0) return -1;
+    --pCMe->m_cRef;
+    if (pCMe->m_cRef == 0) {
+        pCMe->Delete(pCMe);
+        return 0;
+    }
+    return pCMe->m_cRef;
+}
+
+static IEcoUnknownVTbl g_xCKD_Tree_NondelegatingUnkVTbl = {
+    CKD_Tree_B0ABC511_NondelegatingQI,
+    CKD_Tree_B0ABC511_NondelegatingAddRef,
+    CKD_Tree_B0ABC511_NondelegatingRelease
+};
+
+/* --- Delegating IKD_Tree QI/AddRef/Release (delegates to pIUnkOuter when aggregated) --- */
+
+static int16_t ECOCALLMETHOD CKD_Tree_B0ABC511_QueryInterface(/* in */ IKD_TreePtr_t me, /* in */ const UGUID* riid, /* out */ void** ppv) {
+    CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)me;
+
+    if (me == 0 || riid == 0 || ppv == 0) {
+        return ERR_ECO_POINTER;
+    }
+
+    return pCMe->m_pIUnkOuter->pVTbl->QueryInterface(pCMe->m_pIUnkOuter, riid, ppv);
 }
 
 /*
@@ -751,13 +795,8 @@ static int16_t ECOCALLMETHOD CKD_Tree_B0ABC511_QueryInterface(/* in */ IKD_TreeP
  */
 static uint32_t ECOCALLMETHOD CKD_Tree_B0ABC511_AddRef(/* in */ IKD_TreePtr_t me) {
     CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)me;
-
-    /* Pointer Validation */
-    if (me == 0 ) {
-        return -1; /* ERR_ECO_POINTER */
-    }
-
-    return ++pCMe->m_cRef;
+    if (me == 0) return -1;
+    return pCMe->m_pIUnkOuter->pVTbl->AddRef(pCMe->m_pIUnkOuter);
 }
 
 /*
@@ -773,21 +812,79 @@ static uint32_t ECOCALLMETHOD CKD_Tree_B0ABC511_AddRef(/* in */ IKD_TreePtr_t me
  */
 static uint32_t ECOCALLMETHOD CKD_Tree_B0ABC511_Release(/* in */ IKD_TreePtr_t me) {
     CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)me;
-
-    /* Pointer Validation */
-    if (me == 0 ) {
-        return -1; /* ERR_ECO_POINTER */
-    }
-
-    /* Decrementing the component's reference count */
-    --pCMe->m_cRef;
-    /* If the count is zero, free the instance data */
-    if ( pCMe->m_cRef == 0 ) {
-        pCMe->Delete(pCMe);
-        return 0;
-    }
-    return pCMe->m_cRef;
+    if (me == 0) return -1;
+    return pCMe->m_pIUnkOuter->pVTbl->Release(pCMe->m_pIUnkOuter);
 }
+
+/* --- Delegating IEcoCalculatorX (containment of component A) --- */
+
+static int16_t ECOCALLMETHOD CKD_Tree_ICalcX_QueryInterface(IEcoCalculatorXPtr_t me, const UGUID* riid, void** ppv) {
+    CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)((char_t*)me - offsetof(CKD_Tree_B0ABC511, m_pVTblIEcoCalculatorX));
+    return pCMe->m_pIUnkOuter->pVTbl->QueryInterface(pCMe->m_pIUnkOuter, riid, ppv);
+}
+
+static uint32_t ECOCALLMETHOD CKD_Tree_ICalcX_AddRef(IEcoCalculatorXPtr_t me) {
+    CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)((char_t*)me - offsetof(CKD_Tree_B0ABC511, m_pVTblIEcoCalculatorX));
+    return pCMe->m_pIUnkOuter->pVTbl->AddRef(pCMe->m_pIUnkOuter);
+}
+
+static uint32_t ECOCALLMETHOD CKD_Tree_ICalcX_Release(IEcoCalculatorXPtr_t me) {
+    CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)((char_t*)me - offsetof(CKD_Tree_B0ABC511, m_pVTblIEcoCalculatorX));
+    return pCMe->m_pIUnkOuter->pVTbl->Release(pCMe->m_pIUnkOuter);
+}
+
+static int32_t ECOCALLMETHOD CKD_Tree_ICalcX_Addition(IEcoCalculatorXPtr_t me, int32_t a, int32_t b) {
+    CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)((char_t*)me - offsetof(CKD_Tree_B0ABC511, m_pVTblIEcoCalculatorX));
+    return pCMe->m_pInnerCalculatorX->pVTbl->Addition(pCMe->m_pInnerCalculatorX, a, b);
+}
+
+static int32_t ECOCALLMETHOD CKD_Tree_ICalcX_Subtraction(IEcoCalculatorXPtr_t me, int32_t a, int32_t b) {
+    CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)((char_t*)me - offsetof(CKD_Tree_B0ABC511, m_pVTblIEcoCalculatorX));
+    return pCMe->m_pInnerCalculatorX->pVTbl->Subtraction(pCMe->m_pInnerCalculatorX, a, b);
+}
+
+static IEcoCalculatorXVTbl g_xCKD_Tree_ICalcXVTbl = {
+    CKD_Tree_ICalcX_QueryInterface,
+    CKD_Tree_ICalcX_AddRef,
+    CKD_Tree_ICalcX_Release,
+    CKD_Tree_ICalcX_Addition,
+    CKD_Tree_ICalcX_Subtraction
+};
+
+/* --- Delegating IEcoCalculatorY (containment of component D) --- */
+
+static int16_t ECOCALLMETHOD CKD_Tree_ICalcY_QueryInterface(IEcoCalculatorYPtr_t me, const UGUID* riid, void** ppv) {
+    CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)((char_t*)me - offsetof(CKD_Tree_B0ABC511, m_pVTblIEcoCalculatorY));
+    return pCMe->m_pIUnkOuter->pVTbl->QueryInterface(pCMe->m_pIUnkOuter, riid, ppv);
+}
+
+static uint32_t ECOCALLMETHOD CKD_Tree_ICalcY_AddRef(IEcoCalculatorYPtr_t me) {
+    CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)((char_t*)me - offsetof(CKD_Tree_B0ABC511, m_pVTblIEcoCalculatorY));
+    return pCMe->m_pIUnkOuter->pVTbl->AddRef(pCMe->m_pIUnkOuter);
+}
+
+static uint32_t ECOCALLMETHOD CKD_Tree_ICalcY_Release(IEcoCalculatorYPtr_t me) {
+    CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)((char_t*)me - offsetof(CKD_Tree_B0ABC511, m_pVTblIEcoCalculatorY));
+    return pCMe->m_pIUnkOuter->pVTbl->Release(pCMe->m_pIUnkOuter);
+}
+
+static int32_t ECOCALLMETHOD CKD_Tree_ICalcY_Multiplication(IEcoCalculatorYPtr_t me, int32_t a, int32_t b) {
+    CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)((char_t*)me - offsetof(CKD_Tree_B0ABC511, m_pVTblIEcoCalculatorY));
+    return pCMe->m_pInnerCalculatorY->pVTbl->Multiplication(pCMe->m_pInnerCalculatorY, a, b);
+}
+
+static int32_t ECOCALLMETHOD CKD_Tree_ICalcY_Division(IEcoCalculatorYPtr_t me, int32_t a, int32_t b) {
+    CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)((char_t*)me - offsetof(CKD_Tree_B0ABC511, m_pVTblIEcoCalculatorY));
+    return pCMe->m_pInnerCalculatorY->pVTbl->Division(pCMe->m_pInnerCalculatorY, a, b);
+}
+
+static IEcoCalculatorYVTbl g_xCKD_Tree_ICalcYVTbl = {
+    CKD_Tree_ICalcY_QueryInterface,
+    CKD_Tree_ICalcY_AddRef,
+    CKD_Tree_ICalcY_Release,
+    CKD_Tree_ICalcY_Multiplication,
+    CKD_Tree_ICalcY_Division
+};
 
 /*
  *
@@ -1194,19 +1291,25 @@ static void ECOCALLMETHOD deleteCKD_Tree_B0ABC511(/* in */ CKD_Tree_B0ABC511Ptr_
 
     if (pCMe != 0 ) {
         pIMem = pCMe->m_pIMem;
+        /* Release contained calculator components */
+        if (pCMe->m_pInnerCalculatorY != 0) {
+            pCMe->m_pInnerCalculatorY->pVTbl->Release(pCMe->m_pInnerCalculatorY);
+            pCMe->m_pInnerCalculatorY = 0;
+        }
+        if (pCMe->m_pInnerCalculatorX != 0) {
+            pCMe->m_pInnerCalculatorX->pVTbl->Release(pCMe->m_pInnerCalculatorX);
+            pCMe->m_pInnerCalculatorX = 0;
+        }
         if ( pCMe->m_pISys != 0 ) {
             pCMe->m_pISys->pVTbl->Release(pCMe->m_pISys);
             pCMe->m_pISys = 0;
         }
-        /* Without the allocator nothing was allocated and nothing can be freed */
         if ( pIMem == 0 ) {
             return;
         }
-        /* Free the tree */
         if ( pCMe->m_pRoot != 0 ) {
             CKD_Tree_FreeNodeRecursive(pCMe->m_pRoot, pIMem);
         }
-        /* Freeing */
         if ( pCMe->m_Name != 0 ) {
             pIMem->pVTbl->Free(pIMem, pCMe->m_Name);
         }
@@ -1234,17 +1337,23 @@ IKD_TreeVTbl g_xA1711225CF7045B6985ECA20A33CA463VTbl_B0ABC511 = {
 /* Object Instance (template copied into every created instance) */
 CKD_Tree_B0ABC511 g_xCKD_Tree_B0ABC511 = {
     &g_xA1711225CF7045B6985ECA20A33CA463VTbl_B0ABC511,
+    &g_xCKD_Tree_NondelegatingUnkVTbl,
+    &g_xCKD_Tree_ICalcXVTbl,
+    &g_xCKD_Tree_ICalcYVTbl,
     initCKD_Tree_B0ABC511,
     createCKD_Tree_B0ABC511,
     deleteCKD_Tree_B0ABC511,
     1,  /* m_cRef */
     0,  /* m_pIMem */
     0,  /* m_pISys */
+    0,  /* m_pIUnkOuter */
     0,  /* m_Name */
     0,  /* m_dimension */
     0,  /* m_pRoot */
     0,  /* m_pointCount */
-    KD_TYPE_INT16   /* m_type */
+    KD_TYPE_INT16,  /* m_type */
+    0,  /* m_pInnerCalculatorX */
+    0   /* m_pInnerCalculatorY */
 };
 
 /*
@@ -1260,44 +1369,65 @@ CKD_Tree_B0ABC511 g_xCKD_Tree_B0ABC511 = {
  * </description>
  *
  */
-int16_t ECOCALLMETHOD CKD_Tree_B0ABC511_CreateInstance(/* in */ IEcoUnknownPtr_t pIUnkSystem, /* in */ IEcoUnknownPtr_t pIUnkOuter, /* out */ IKD_Tree** ppIKD_Tree) {
+static int16_t CKD_Tree_B0ABC511_CreateCommon(IEcoUnknownPtr_t pIUnkSystem, IEcoUnknownPtr_t pIUnkOuter, CKD_Tree_B0ABC511** ppCMe) {
     CKD_Tree_B0ABC511* pCMe = 0;
     IEcoSystem1* pISys = 0;
     IEcoMemoryAllocator1* pIMem = 0;
-    int16_t result = ERR_ECO_POINTER;
+    IEcoCalculatorX* pInnerX = 0;
+    IEcoCalculatorY* pInnerY = 0;
+    int16_t result;
 
-    /* Pointer Validation */
-    if (ppIKD_Tree == 0 || pIUnkSystem == 0) {
-        return result;
-    }
-    *ppIKD_Tree = 0;
+    if (ppCMe == 0 || pIUnkSystem == 0) return ERR_ECO_POINTER;
+    *ppCMe = 0;
 
-    /* Getting the system interface */
     result = pIUnkSystem->pVTbl->QueryInterface(pIUnkSystem, &GID_IEcoSystem, (void **)&pISys);
-    if (result != 0 || pISys == 0) {
-        return ERR_ECO_NOSYSTEM;
-    }
+    if (result != 0 || pISys == 0) return ERR_ECO_NOSYSTEM;
 
-    /* Getting the memory allocator interface */
     result = CKD_Tree_GetMemoryAllocator(pISys, &pIMem);
     if (result != 0 || pIMem == 0) {
         pISys->pVTbl->Release(pISys);
         return result;
     }
 
-    /* Allocating the instance */
+    /* Create contained component A (IEcoCalculatorX) */
+    result = CEcoCalculatorA_CreateInstance(pIUnkSystem, 0, &pInnerX);
+    if (result != 0 || pInnerX == 0) {
+        pIMem->pVTbl->Release(pIMem);
+        pISys->pVTbl->Release(pISys);
+        return result;
+    }
+
+    /* Create contained component D (IEcoCalculatorY, D contains A internally) */
+    result = CEcoCalculatorD_CreateInstance(pIUnkSystem, 0, &pInnerY);
+    if (result != 0 || pInnerY == 0) {
+        pInnerX->pVTbl->Release(pInnerX);
+        pIMem->pVTbl->Release(pIMem);
+        pISys->pVTbl->Release(pISys);
+        return result;
+    }
+
     pCMe = (CKD_Tree_B0ABC511*)pIMem->pVTbl->Alloc(pIMem, sizeof(CKD_Tree_B0ABC511));
     if (pCMe == 0) {
+        pInnerY->pVTbl->Release(pInnerY);
+        pInnerX->pVTbl->Release(pInnerX);
         pIMem->pVTbl->Release(pIMem);
         pISys->pVTbl->Release(pISys);
         return ERR_ECO_OUTOFMEMORY;
     }
     pIMem->pVTbl->Copy(pIMem, pCMe, &g_xCKD_Tree_B0ABC511, sizeof(CKD_Tree_B0ABC511));
 
-    /* The instance takes over both references; Delete releases them */
     pCMe->m_cRef = 1;
     pCMe->m_pIMem = pIMem;
     pCMe->m_pISys = pISys;
+    pCMe->m_pInnerCalculatorX = pInnerX;
+    pCMe->m_pInnerCalculatorY = pInnerY;
+
+    /* Set up aggregation: if pIUnkOuter is provided, delegate to it */
+    if (pIUnkOuter != 0) {
+        pCMe->m_pIUnkOuter = pIUnkOuter;
+    } else {
+        pCMe->m_pIUnkOuter = (IEcoUnknown*)&pCMe->m_pVTblINondelegatingUnk;
+    }
 
     result = pCMe->Create(pCMe, pIUnkSystem, pIUnkOuter);
     if (result == 0) {
@@ -1308,7 +1438,37 @@ int16_t ECOCALLMETHOD CKD_Tree_B0ABC511_CreateInstance(/* in */ IEcoUnknownPtr_t
         return result;
     }
 
-    *ppIKD_Tree = (IKD_Tree*)pCMe;
+    *ppCMe = pCMe;
+    return ERR_ECO_SUCCESS;
+}
 
+int16_t ECOCALLMETHOD CKD_Tree_B0ABC511_CreateInstance(/* in */ IEcoUnknownPtr_t pIUnkSystem, /* in */ IEcoUnknownPtr_t pIUnkOuter, /* out */ IKD_Tree** ppIKD_Tree) {
+    CKD_Tree_B0ABC511* pCMe = 0;
+    int16_t result;
+
+    if (ppIKD_Tree == 0) return ERR_ECO_POINTER;
+    *ppIKD_Tree = 0;
+
+    if (pIUnkOuter != 0) return ERR_ECO_NOAGGREGATION;
+
+    result = CKD_Tree_B0ABC511_CreateCommon(pIUnkSystem, 0, &pCMe);
+    if (result != 0) return result;
+
+    *ppIKD_Tree = (IKD_Tree*)pCMe;
+    return ERR_ECO_SUCCESS;
+}
+
+int16_t ECOCALLMETHOD CKD_Tree_B0ABC511_CreateInstanceAggr(/* in */ IEcoUnknownPtr_t pIUnkSystem, /* in */ IEcoUnknownPtr_t pIUnkOuter, /* out */ IEcoUnknown** ppIUnk) {
+    CKD_Tree_B0ABC511* pCMe = 0;
+    int16_t result;
+
+    if (ppIUnk == 0) return ERR_ECO_POINTER;
+    *ppIUnk = 0;
+
+    result = CKD_Tree_B0ABC511_CreateCommon(pIUnkSystem, pIUnkOuter, &pCMe);
+    if (result != 0) return result;
+
+    /* Return non-delegating IEcoUnknown */
+    *ppIUnk = (IEcoUnknown*)&pCMe->m_pVTblINondelegatingUnk;
     return ERR_ECO_SUCCESS;
 }

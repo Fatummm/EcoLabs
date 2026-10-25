@@ -147,6 +147,12 @@ LIBS = $(LIB_DIR) $(LIBS_TARGET)
 SRC_C = ..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)Lab1.c \
 ..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)CKD_Tree.c \
 ..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)CKD_TreeFactory.c \
+..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)CEcoCalculatorA.c \
+..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)CEcoCalculatorB.c \
+..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)CEcoCalculatorC.c \
+..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)CEcoCalculatorD.c \
+..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)CEcoCalculatorE.c \
+..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)CEcoLab2.c \
 ..$(SLASH)..$(SLASH)..$(SLASH)UnitTestFiles$(SLASH)CKD_Tree_Test.c
 SRC_S = 
 
