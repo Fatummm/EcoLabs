@@ -17,8 +17,11 @@
 #define __C_KD_TREE_TEST_H__
 
 #include "IEcoSystem1.h"
+#include "IEcoInterfaceBus1.h"
 #include "IdEcoMemoryManager1.h"
 #include "IEcoStdIOC89.h"
+
+int16_t CKD_Tree_Test_Events(IEcoInterfaceBus1* pIBus, IEcoMemoryAllocator1* pIMem, IEcoStdIOC89* pIStdIO);
 
 /* 20 points, dimension 3, one test per coordinate type */
 int16_t CKD_Tree_Test_Int16_20(IEcoSystem1* pISys, IEcoMemoryAllocator1* pIMem, IEcoStdIOC89* pIStdIO);

@@ -15,6 +15,7 @@ DEVICE ?= D1
 ARCH ?= x86_64
 DEBUG ?= 0
 PLATFORM = Linux
+ECO_FRAMEWORK ?= ../../../DependenciesFiles
 
 # --- Toolchain, Path and Architecture Selection ---
 ifeq ($(ARCH), x86_64)
@@ -95,32 +96,34 @@ endif
 # --- Output Directory Mapping ---
 CONFIG_DIR = $(if $(filter 1,$(DEBUG)),Debug,Release)
 OUT_DIR = ..$(SLASH)..$(SLASH)..$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)$(BASE_TARGET)$(CONFIG_DIR)
-OUT_NAME = Lab1
+OUT_NAME = Lab3
 
 # --- Compilation Flags ---
 # Includes
-INC = -I "..$(SLASH)..$(SLASH)..$(SLASH)DependenciesFiles$(SLASH)Eco.InterfaceBus1$(SLASH)SharedFiles" \
--I "..$(SLASH)..$(SLASH)..$(SLASH)DependenciesFiles$(SLASH)Eco.StdIO.C89$(SLASH)SharedFiles" \
--I "..$(SLASH)..$(SLASH)..$(SLASH)DependenciesFiles$(SLASH)Eco.StdLib.C89$(SLASH)SharedFiles" \
--I "..$(SLASH)..$(SLASH)..$(SLASH)DependenciesFiles$(SLASH)Eco.Math.C89$(SLASH)SharedFiles" \
--I "..$(SLASH)..$(SLASH)..$(SLASH)DependenciesFiles$(SLASH)Eco.MemoryManager1$(SLASH)SharedFiles" \
--I "..$(SLASH)..$(SLASH)..$(SLASH)DependenciesFiles$(SLASH)Eco.String.C89$(SLASH)SharedFiles" \
+INC = -I "$(ECO_FRAMEWORK)/Eco.InterfaceBus1$(SLASH)SharedFiles" \
+-I "$(ECO_FRAMEWORK)/Eco.StdIO.C89$(SLASH)SharedFiles" \
+-I "$(ECO_FRAMEWORK)/Eco.StdLib.C89$(SLASH)SharedFiles" \
+-I "$(ECO_FRAMEWORK)/Eco.Math.C89$(SLASH)SharedFiles" \
+-I "$(ECO_FRAMEWORK)/Eco.MemoryManager1$(SLASH)SharedFiles" \
+-I "$(ECO_FRAMEWORK)/Eco.String.C89$(SLASH)SharedFiles" \
 -I ..$(SLASH)..$(SLASH)..$(SLASH)SharedFiles$(SLASH) \
 -I ..$(SLASH)..$(SLASH)..$(SLASH)HeaderFiles$(SLASH) \
 -I ..$(SLASH)..$(SLASH)..$(SLASH)HeaderFiles$(SLASH)$(ARCH) \
--I "../../../DependenciesFiles/Eco.Core1/SharedFiles" \
--I "../../../DependenciesFiles/Eco.System1/SharedFiles" \
--I "../../../DependenciesFiles/Eco.FileSystemManagement1/SharedFiles"
+-I "$(ECO_FRAMEWORK)/Eco.Core1/SharedFiles" \
+-I "$(ECO_FRAMEWORK)/Eco.System1/SharedFiles" \
+-I "$(ECO_FRAMEWORK)/Eco.FileSystemManagement1/SharedFiles" \
+-I "$(ECO_FRAMEWORK)/Eco.List1/SharedFiles"
 
 # --- Linker Configuration ---
-LIB_DIR = -L "..$(SLASH)..$(SLASH)..$(SLASH)DependenciesFiles$(SLASH)Eco.InterfaceBus1$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease" \
--L "..$(SLASH)..$(SLASH)..$(SLASH)DependenciesFiles$(SLASH)Eco.StdIO.C89$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease" \
--L "..$(SLASH)..$(SLASH)..$(SLASH)DependenciesFiles$(SLASH)Eco.StdLib.C89$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease" \
--L "..$(SLASH)..$(SLASH)..$(SLASH)DependenciesFiles$(SLASH)Eco.Math.C89$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease" \
--L "..$(SLASH)..$(SLASH)..$(SLASH)DependenciesFiles$(SLASH)Eco.MemoryManager1$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease" \
--L "..$(SLASH)..$(SLASH)..$(SLASH)DependenciesFiles$(SLASH)Eco.String.C89$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease"\
--L "..$(SLASH)..$(SLASH)..$(SLASH)DependenciesFiles$(SLASH)Eco.System1$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease"\
--L "..$(SLASH)..$(SLASH)..$(SLASH)DependenciesFiles$(SLASH)Eco.FileSystemManagement1$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease"\
+LIB_DIR = -L "$(ECO_FRAMEWORK)/Eco.InterfaceBus1$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease" \
+-L "$(ECO_FRAMEWORK)/Eco.StdIO.C89$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease" \
+-L "$(ECO_FRAMEWORK)/Eco.StdLib.C89$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease" \
+-L "$(ECO_FRAMEWORK)/Eco.Math.C89$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease" \
+-L "$(ECO_FRAMEWORK)/Eco.MemoryManager1$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease" \
+-L "$(ECO_FRAMEWORK)/Eco.String.C89$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease"\
+-L "$(ECO_FRAMEWORK)/Eco.System1$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease"\
+-L "$(ECO_FRAMEWORK)/Eco.FileSystemManagement1$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)StaticRelease"\
+-L "$(ECO_FRAMEWORK)/Eco.List1/BuildFiles/$(PLATFORM)/$(ARCH_TARGET)/StaticRelease" \
 -L "..$(SLASH)..$(SLASH)..$(SLASH)BuildFiles$(SLASH)$(PLATFORM)$(SLASH)$(ARCH_TARGET)$(SLASH)$(BASE_TARGET)$(CONFIG_DIR)"
 
 # Global Compiler Flags (-DECO_LINUX )
@@ -134,7 +137,7 @@ else
 endif
 
 ifeq ($(TARGET), 1)
-    LIBS_TARGET = -lm -lc -lgcc -ldl -Wl,--start-group -l$(ECO_GEN_SYS_LIB) -l00000000000000000000000046534D31 -l00000000000000000000000042757331 -l00000000000000000000000053494F31 -l00000000000000000000000053544431 -l61C988E21B7041378C5BDAFBB68A3FA0 -l0000000000000000000000004D656D31 -l00000000000000000000000073747231 -Wl,--end-group
+    LIBS_TARGET = -lm -lc -lgcc -ldl -Wl,--start-group -l$(ECO_GEN_SYS_LIB) -l00000000000000000000000046534D31 -l00000000000000000000000042757331 -l00000000000000000000000053494F31 -l00000000000000000000000053544431 -l61C988E21B7041378C5BDAFBB68A3FA0 -l0000000000000000000000004D656D31 -l00000000000000000000000073747231 -l53884AFC93C448ECAA929C8D3A562281 -Wl,--end-group
 else
     LIBS_TARGET = -lgcc -ldl -l$(ECO_GEN_SYS_LIB)
 endif
@@ -147,7 +150,11 @@ LIBS = $(LIB_DIR) $(LIBS_TARGET)
 SRC_C = ..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)Lab1.c \
 ..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)CKD_Tree.c \
 ..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)CKD_TreeFactory.c \
-..$(SLASH)..$(SLASH)..$(SLASH)UnitTestFiles$(SLASH)CKD_Tree_Test.c
+..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)CKD_TreeConnectionPoint.c \
+..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)CKD_TreeEnumConnectionPoints.c \
+..$(SLASH)..$(SLASH)..$(SLASH)SourceFiles$(SLASH)CKD_TreeEnumConnections.c \
+..$(SLASH)..$(SLASH)..$(SLASH)UnitTestFiles$(SLASH)CKD_Tree_Test.c \
+..$(SLASH)..$(SLASH)..$(SLASH)UnitTestFiles$(SLASH)CKD_Tree_EventsTest.c
 SRC_S = 
 
 OBJ = $(SRC_C:.c=.o)

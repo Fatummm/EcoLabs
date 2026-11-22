@@ -22,6 +22,7 @@
 
 #include "IKD_Tree.h"
 #include "IEcoSystem1.h"
+#include "IEcoConnectionPointContainer.h"
 #include "IdEcoMemoryManager1.h"
 
 typedef struct CKD_Tree_B0ABC511* CKD_Tree_B0ABC511Ptr_t;
@@ -30,6 +31,7 @@ typedef struct CKD_Tree_B0ABC511 {
 
     /* IKD_Tree interface function table */
     IKD_TreeVTbl* m_pVTblIKD_Tree;
+    IEcoConnectionPointContainerVTbl* m_pVTblICPC;
 
 
     /* Instance initialization */
@@ -57,6 +59,8 @@ typedef struct CKD_Tree_B0ABC511 {
     uint32_t m_pointCount;
     /* Coordinate element type (KD_TYPE_*) */
     int16_t m_type;
+    struct CKD_TreeConnectionPoint* m_pEvents;
+    int16_t m_notifying;
 
 } CKD_Tree_B0ABC511;
 

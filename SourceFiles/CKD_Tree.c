@@ -22,6 +22,75 @@
 #include "IEcoInterfaceBus1.h"
 #include "IEcoInterfaceBus1MemExt.h"
 #include "CKD_Tree.h"
+#include "CKD_TreeConnectionPoint.h"
+#include "CKD_TreeEnumConnectionPoints.h"
+#include "IKD_TreeEvents.h"
+#include <stddef.h>
+
+typedef enum {
+    KD_BUILD_NODE,
+    KD_SEARCH_VISIT,
+    KD_SEARCH_PRUNE
+} KDTreeStep;
+
+typedef struct {
+    KDTreeStep kind;
+    uint16_t axis;
+    union {
+        struct {
+            int32_t left;
+            int32_t median;
+            int32_t right;
+        } build;
+        struct {
+            double distance;
+            uint16_t candidateCount;
+        } visit;
+        struct {
+            double planeDistance;
+            double worstDistance;
+        } prune;
+    } data;
+} KDTreeEvent;
+
+static void CKD_Tree_FireEvent(CKD_Tree_B0ABC511* pCMe, const KDTreeEvent* event) {
+    IEcoConnectionPoint* pICP = (IEcoConnectionPoint*)pCMe->m_pEvents;
+    IEcoEnumConnections* pEnum = 0;
+    EcoConnectionData connection;
+    IKD_Tree* source = (IKD_Tree*)pCMe;
+    IKD_TreeEvents* sink;
+
+    if (CKD_TreeConnectionPoint_Count(pCMe->m_pEvents) == 0 ||
+        pICP->pVTbl->EnumConnections(pICP, &pEnum) != ERR_ECO_SUCCESS) {
+        return;
+    }
+
+    pCMe->m_notifying = 1;
+    while (pEnum->pVTbl->Next(pEnum, 1, &connection, 0) == ERR_ECO_SUCCESS) {
+        sink = 0;
+        if (connection.pUnk->pVTbl->QueryInterface(connection.pUnk,
+                &IID_IKD_TreeEvents, (voidptr_t*)&sink) == ERR_ECO_SUCCESS && sink != 0) {
+            switch (event->kind) {
+            case KD_BUILD_NODE:
+                sink->pVTbl->OnBuildNode(sink, source, event->axis,
+                    event->data.build.left, event->data.build.median, event->data.build.right);
+                break;
+            case KD_SEARCH_VISIT:
+                sink->pVTbl->OnSearchVisit(sink, source, event->axis,
+                    event->data.visit.distance, event->data.visit.candidateCount);
+                break;
+            case KD_SEARCH_PRUNE:
+                sink->pVTbl->OnSearchPrune(sink, source, event->axis,
+                    event->data.prune.planeDistance, event->data.prune.worstDistance);
+                break;
+            }
+            sink->pVTbl->Release(sink);
+        }
+        connection.pUnk->pVTbl->Release(connection.pUnk);
+    }
+    pEnum->pVTbl->Release(pEnum);
+    pCMe->m_notifying = 0;
+}
 
 /*
  *
@@ -363,18 +432,19 @@ static KDNodePtr_t CKD_Tree_CreateNode(
  *
  */
 static KDNodePtr_t CKD_Tree_BuildTreeRecursive(
+    CKD_Tree_B0ABC511* pCMe,
     KDPointPtr_t* points,
     int32_t left,
     int32_t right,
     int16_t axis,
     uint16_t dimension,
     int16_t type,
-    IEcoMemoryAllocator1* pIMem,
     int16_t* pFailed)
 {
     KDNodePtr_t node;
     int32_t median_idx;
     int16_t next_axis;
+    KDTreeEvent event;
 
     /* Base case: empty range */
     if (left >= right) {
@@ -385,19 +455,25 @@ static KDNodePtr_t CKD_Tree_BuildTreeRecursive(
     median_idx = CKD_Tree_FindMedianIndex(points, left, right, axis, type);
 
     /* Allocate node */
-    node = CKD_Tree_CreateNode(points[median_idx]->coords, dimension, type, pIMem);
+    node = CKD_Tree_CreateNode(points[median_idx]->coords, dimension, type, pCMe->m_pIMem);
     if (node == 0) {
         *pFailed = 1;
         return 0;
     }
+    event.kind = KD_BUILD_NODE;
+    event.axis = (uint16_t)axis;
+    event.data.build.left = left;
+    event.data.build.median = median_idx;
+    event.data.build.right = right;
+    CKD_Tree_FireEvent(pCMe, &event);
 
     /* Next splitting axis */
     next_axis = (axis + 1) % (int16_t)dimension;
 
     /* Recursively build subtrees */
-    node->left = CKD_Tree_BuildTreeRecursive(points, left, median_idx, next_axis, dimension, type, pIMem, pFailed);
+    node->left = CKD_Tree_BuildTreeRecursive(pCMe, points, left, median_idx, next_axis, dimension, type, pFailed);
     if (*pFailed == 0) {
-        node->right = CKD_Tree_BuildTreeRecursive(points, median_idx + 1, right, next_axis, dimension, type, pIMem, pFailed);
+        node->right = CKD_Tree_BuildTreeRecursive(pCMe, points, median_idx + 1, right, next_axis, dimension, type, pFailed);
     }
 
     return node;
@@ -444,6 +520,7 @@ static void CKD_Tree_FreeNodeRecursive(
  *
  */
 static void CKD_Tree_SearchRecursive(
+    CKD_Tree_B0ABC511* pCMe,
     KDNodePtr_t node,
     voidptr_t queryCoords,
     int16_t k,
@@ -460,6 +537,7 @@ static void CKD_Tree_SearchRecursive(
     int16_t i;
     KDNodePtr_t first;
     KDNodePtr_t second;
+    KDTreeEvent event;
 
     if (node == 0) {
         return;
@@ -491,6 +569,12 @@ static void CKD_Tree_SearchRecursive(
         }
     }
 
+    event.kind = KD_SEARCH_VISIT;
+    event.axis = (uint16_t)axis;
+    event.data.visit.distance = dist;
+    event.data.visit.candidateCount = result->count;
+    CKD_Tree_FireEvent(pCMe, &event);
+
     /* Decide which subtree to visit first */
     next_axis = (axis + 1) % (int16_t)dimension;
     if (CKD_Tree_AxisLess(queryCoords, node->point.coords, axis, type)) {
@@ -502,7 +586,7 @@ static void CKD_Tree_SearchRecursive(
     }
 
     /* Visit closer subtree first */
-    CKD_Tree_SearchRecursive(first, queryCoords, k, dimension, next_axis, type, result);
+    CKD_Tree_SearchRecursive(pCMe, first, queryCoords, k, dimension, next_axis, type, result);
 
     /* Check if we need to visit the other subtree (pruning) */
     axis_dist = CKD_Tree_AxisDiff(queryCoords, node->point.coords, axis, type);
@@ -510,7 +594,7 @@ static void CKD_Tree_SearchRecursive(
 
     if (result->count < (uint16_t)k) {
         /* Haven't found k neighbors yet, must check other side */
-        CKD_Tree_SearchRecursive(second, queryCoords, k, dimension, next_axis, type, result);
+        CKD_Tree_SearchRecursive(pCMe, second, queryCoords, k, dimension, next_axis, type, result);
     } else {
         /* Find current worst distance */
         worst_dist = result->distances[0];
@@ -521,7 +605,12 @@ static void CKD_Tree_SearchRecursive(
         }
         /* Only visit other subtree if splitting plane is closer than worst */
         if (axis_dist < worst_dist) {
-            CKD_Tree_SearchRecursive(second, queryCoords, k, dimension, next_axis, type, result);
+            CKD_Tree_SearchRecursive(pCMe, second, queryCoords, k, dimension, next_axis, type, result);
+        } else if (second != 0) {
+            event.kind = KD_SEARCH_PRUNE;
+            event.data.prune.planeDistance = axis_dist;
+            event.data.prune.worstDistance = worst_dist;
+            CKD_Tree_FireEvent(pCMe, &event);
         }
     }
 }
@@ -731,6 +820,10 @@ static int16_t ECOCALLMETHOD CKD_Tree_B0ABC511_QueryInterface(/* in */ IKD_TreeP
         *ppv = &pCMe->m_pVTblIKD_Tree;
         pCMe->m_pVTblIKD_Tree->AddRef((IKD_Tree*)pCMe);
     }
+    else if (IsEqualUGUID(riid, &IID_IEcoConnectionPointContainer) && pCMe->m_pEvents != 0) {
+        *ppv = &pCMe->m_pVTblICPC;
+        pCMe->m_pVTblIKD_Tree->AddRef(me);
+    }
     else {
         *ppv = 0;
         return ERR_ECO_NOINTERFACE;
@@ -789,6 +882,73 @@ static uint32_t ECOCALLMETHOD CKD_Tree_B0ABC511_Release(/* in */ IKD_TreePtr_t m
     return pCMe->m_cRef;
 }
 
+static CKD_Tree_B0ABC511* CKD_Tree_FromContainer(IEcoConnectionPointContainer* me) {
+    return (CKD_Tree_B0ABC511*)((char*)me - offsetof(CKD_Tree_B0ABC511, m_pVTblICPC));
+}
+
+static int16_t ECOCALLMETHOD CKD_Tree_ICPC_QueryInterface(IEcoConnectionPointContainer* me,
+    const UGUID* riid, voidptr_t* ppv)
+{
+    if (me == 0) {
+        return ERR_ECO_POINTER;
+    }
+    return CKD_Tree_B0ABC511_QueryInterface((IKD_Tree*)CKD_Tree_FromContainer(me), riid, ppv);
+}
+
+static uint32_t ECOCALLMETHOD CKD_Tree_ICPC_AddRef(IEcoConnectionPointContainer* me) {
+    if (me == 0) {
+        return -1;
+    }
+    return CKD_Tree_B0ABC511_AddRef((IKD_Tree*)CKD_Tree_FromContainer(me));
+}
+
+static uint32_t ECOCALLMETHOD CKD_Tree_ICPC_Release(IEcoConnectionPointContainer* me) {
+    if (me == 0) {
+        return -1;
+    }
+    return CKD_Tree_B0ABC511_Release((IKD_Tree*)CKD_Tree_FromContainer(me));
+}
+
+static int16_t ECOCALLMETHOD CKD_Tree_ICPC_EnumConnectionPoints(IEcoConnectionPointContainer* me,
+    IEcoEnumConnectionPoints** ppEnum)
+{
+    CKD_Tree_B0ABC511* pCMe;
+    IEcoConnectionPoint* pICP;
+
+    if (me == 0 || ppEnum == 0) {
+        return ERR_ECO_POINTER;
+    }
+    pCMe = CKD_Tree_FromContainer(me);
+    pICP = (IEcoConnectionPoint*)pCMe->m_pEvents;
+    return createCKD_TreeEnumConnectionPoints(pCMe->m_pIMem, &pICP, 1, 0, ppEnum);
+}
+
+static int16_t ECOCALLMETHOD CKD_Tree_ICPC_FindConnectionPoint(IEcoConnectionPointContainer* me,
+    const UGUID* riid, IEcoConnectionPoint** ppCP)
+{
+    IEcoConnectionPoint* pICP;
+
+    if (me == 0 || riid == 0 || ppCP == 0) {
+        return ERR_ECO_POINTER;
+    }
+    *ppCP = 0;
+    if (!IsEqualUGUID(riid, &IID_IKD_TreeEvents)) {
+        return ERR_ECO_NOINTERFACE;
+    }
+    pICP = (IEcoConnectionPoint*)CKD_Tree_FromContainer(me)->m_pEvents;
+    pICP->pVTbl->AddRef(pICP);
+    *ppCP = pICP;
+    return ERR_ECO_SUCCESS;
+}
+
+static IEcoConnectionPointContainerVTbl g_xKDTreeContainerVTbl = {
+    CKD_Tree_ICPC_QueryInterface,
+    CKD_Tree_ICPC_AddRef,
+    CKD_Tree_ICPC_Release,
+    CKD_Tree_ICPC_EnumConnectionPoints,
+    CKD_Tree_ICPC_FindConnectionPoint
+};
+
 /*
  *
  * <summary>
@@ -810,6 +970,9 @@ static int16_t CKD_Tree_BuildTreeTyped(/* in */ IKD_TreePtr_t me, /* in */ KDPoi
     if (me == 0 || points == 0 || pCMe->m_pIMem == 0) {
         return ERR_ECO_POINTER;
     }
+    if (pCMe->m_notifying) {
+        return ERR_ECO_FAIL;
+    }
     if (count <= 0 || dimension == 0) {
         return ERR_ECO_POINTER;
     }
@@ -830,7 +993,7 @@ static int16_t CKD_Tree_BuildTreeTyped(/* in */ IKD_TreePtr_t me, /* in */ KDPoi
     pCMe->m_type = type;
 
     /* Build tree recursively */
-    pCMe->m_pRoot = CKD_Tree_BuildTreeRecursive(points, 0, count, 0, dimension, type, pCMe->m_pIMem, &failed);
+    pCMe->m_pRoot = CKD_Tree_BuildTreeRecursive(pCMe, points, 0, count, 0, dimension, type, &failed);
     if (failed || pCMe->m_pRoot == 0) {
         /* Do not leave a partially built tree behind */
         CKD_Tree_FreeNodeRecursive(pCMe->m_pRoot, pCMe->m_pIMem);
@@ -944,6 +1107,9 @@ static int16_t ECOCALLMETHOD CKD_Tree_B0ABC511_SearchKNearest(/* in */ IKD_TreeP
     if (me == 0 || point == 0 || point->coords == 0 || result == 0) {
         return ERR_ECO_POINTER;
     }
+    if (pCMe->m_notifying) {
+        return ERR_ECO_FAIL;
+    }
     result->points = 0;
     result->distances = 0;
     result->count = 0;
@@ -965,7 +1131,7 @@ static int16_t ECOCALLMETHOD CKD_Tree_B0ABC511_SearchKNearest(/* in */ IKD_TreeP
     result->count = 0;
 
     /* Run recursive search */
-    CKD_Tree_SearchRecursive(pCMe->m_pRoot, point->coords, k, pCMe->m_dimension, 0, pCMe->m_type, result);
+    CKD_Tree_SearchRecursive(pCMe, pCMe->m_pRoot, point->coords, k, pCMe->m_dimension, 0, pCMe->m_type, result);
 
     return ERR_ECO_SUCCESS;
 }
@@ -987,6 +1153,9 @@ static int16_t ECOCALLMETHOD CKD_Tree_B0ABC511_DestroyTree(/* in */ IKD_TreePtr_
     /* Pointer Validation */
     if (me == 0) {
         return ERR_ECO_POINTER;
+    }
+    if (pCMe->m_notifying) {
+        return ERR_ECO_FAIL;
     }
 
     if (pCMe->m_pRoot != 0 && pCMe->m_pIMem != 0) {
@@ -1021,6 +1190,9 @@ static int16_t ECOCALLMETHOD CKD_Tree_B0ABC511_InsertPoint(/* in */ IKD_TreePtr_
     if (me == 0 || point == 0 || point->coords == 0) {
         return ERR_ECO_POINTER;
     }
+    if (pCMe->m_notifying) {
+        return ERR_ECO_FAIL;
+    }
     if (pCMe->m_dimension == 0 || pCMe->m_pIMem == 0) {
         return ERR_ECO_POINTER;
     }
@@ -1053,6 +1225,9 @@ static int16_t ECOCALLMETHOD CKD_Tree_B0ABC511_DeletePoint(/* in */ IKD_TreePtr_
     /* Pointer Validation */
     if (me == 0 || point == 0 || point->coords == 0) {
         return ERR_ECO_POINTER;
+    }
+    if (pCMe->m_notifying) {
+        return ERR_ECO_FAIL;
     }
     if (pCMe->m_pRoot == 0 || pCMe->m_pIMem == 0) {
         return ERR_ECO_POINTER;
@@ -1132,6 +1307,7 @@ static int16_t CKD_Tree_GetMemoryAllocator(/* in */ IEcoSystem1* pISys, /* out *
  */
 static int16_t ECOCALLMETHOD initCKD_Tree_B0ABC511(/*in*/ CKD_Tree_B0ABC511Ptr_t me, /* in */ IEcoUnknownPtr_t pIUnkSystem) {
     CKD_Tree_B0ABC511* pCMe = (CKD_Tree_B0ABC511*)me;
+    IEcoInterfaceBus1* pIBus = 0;
     int16_t result = ERR_ECO_POINTER;
 
     /* Pointer Validation */
@@ -1150,9 +1326,20 @@ static int16_t ECOCALLMETHOD initCKD_Tree_B0ABC511(/*in*/ CKD_Tree_B0ABC511Ptr_t
 
     /* Getting the memory allocator interface */
     if (pCMe->m_pIMem == 0) {
-        return CKD_Tree_GetMemoryAllocator(pCMe->m_pISys, &pCMe->m_pIMem);
+        result = CKD_Tree_GetMemoryAllocator(pCMe->m_pISys, &pCMe->m_pIMem);
+        if (result != ERR_ECO_SUCCESS) {
+            return result;
+        }
     }
 
+    /* Eco.List1 enables events; existing clients can still use the tree without it. */
+    result = pCMe->m_pISys->pVTbl->QueryInterface(pCMe->m_pISys,
+        &IID_IEcoInterfaceBus1, (voidptr_t*)&pIBus);
+    if (result == ERR_ECO_SUCCESS && pIBus != 0) {
+        createCKD_TreeConnectionPoint(pCMe->m_pIMem, pIBus,
+            (IEcoConnectionPointContainer*)&pCMe->m_pVTblICPC, &IID_IKD_TreeEvents, &pCMe->m_pEvents);
+        pIBus->pVTbl->Release(pIBus);
+    }
     return ERR_ECO_SUCCESS;
 }
 
@@ -1194,6 +1381,7 @@ static void ECOCALLMETHOD deleteCKD_Tree_B0ABC511(/* in */ CKD_Tree_B0ABC511Ptr_
 
     if (pCMe != 0 ) {
         pIMem = pCMe->m_pIMem;
+        deleteCKD_TreeConnectionPoint(pCMe->m_pEvents);
         if ( pCMe->m_pISys != 0 ) {
             pCMe->m_pISys->pVTbl->Release(pCMe->m_pISys);
             pCMe->m_pISys = 0;
@@ -1234,6 +1422,7 @@ IKD_TreeVTbl g_xA1711225CF7045B6985ECA20A33CA463VTbl_B0ABC511 = {
 /* Object Instance (template copied into every created instance) */
 CKD_Tree_B0ABC511 g_xCKD_Tree_B0ABC511 = {
     &g_xA1711225CF7045B6985ECA20A33CA463VTbl_B0ABC511,
+    &g_xKDTreeContainerVTbl,
     initCKD_Tree_B0ABC511,
     createCKD_Tree_B0ABC511,
     deleteCKD_Tree_B0ABC511,
@@ -1244,7 +1433,9 @@ CKD_Tree_B0ABC511 g_xCKD_Tree_B0ABC511 = {
     0,  /* m_dimension */
     0,  /* m_pRoot */
     0,  /* m_pointCount */
-    KD_TYPE_INT16   /* m_type */
+    KD_TYPE_INT16,  /* m_type */
+    0,  /* m_pEvents */
+    0   /* m_notifying */
 };
 
 /*

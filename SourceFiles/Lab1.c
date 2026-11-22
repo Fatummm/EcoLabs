@@ -23,6 +23,7 @@
 #include "IdEcoMemoryManager1.h"
 #include "IdEcoInterfaceBus1.h"
 #include "IdEcoFileSystemManagement1.h"
+#include "IdEcoList1.h"
 #include "IdEcoStdIOC89.h"
 #include "IEcoStdIOC89.h"
 #include "IdKD_Tree.h"
@@ -52,7 +53,6 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
     /* Pointer to the memory management interface */
     IEcoMemoryAllocator1* pIMem = 0;
     IEcoStdIOC89* pIStdIO = 0;
-    char_t* name = 0;
     /* KD_Tree component — interface pointer only */
     IKD_Tree* pIKDTree = 0;
     /* Test data: 15 points, dimension 3, int64_t coordinates */
@@ -128,8 +128,6 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
         goto Release;
     }
 
-    pIStdIO->pVTbl->printf(pIStdIO, "Hello from EcoMain! Number = %d\n", 42);
-
     /* Registering the KD_Tree component on the bus */
     result = pIBus->pVTbl->RegisterComponent(
         pIBus,
@@ -200,6 +198,9 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
     /* Destroying the tree */
     result = pIKDTree->pVTbl->DestroyTree(pIKDTree);
     pIStdIO->pVTbl->printf(pIStdIO, "\nDestroyTree: result = %d\n", result);
+    if (result != ERR_ECO_SUCCESS) {
+        goto Release;
+    }
 
     /* KD_Tree tests (UnitTestFiles/CKD_Tree_Test.c) */
     testsFailed += CKD_Tree_Test_Int16_20(pISys, pIMem, pIStdIO);
@@ -216,19 +217,19 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
     testsFailed += CKD_Tree_Test_LongLong_100000_Queries(pISys, pIMem, pIStdIO);
     pIStdIO->pVTbl->printf(pIStdIO, "\nKD_Tree tests failed: %d of 12\n", testsFailed);
 
-    /* Memory block allocation */
-    name = (char_t *)pIMem->pVTbl->Alloc(pIMem, 10);
-    if (name == 0) {
-        result = ERR_ECO_OUTOFMEMORY;
+    result = pIBus->pVTbl->RegisterComponent(pIBus, &CID_EcoList1,
+        (IEcoUnknown*)GetIEcoComponentFactoryPtr_53884AFC93C448ECAA929C8D3A562281);
+    if (result != ERR_ECO_SUCCESS) {
+        pIStdIO->pVTbl->printf(pIStdIO, "Eco.List1: registration failed, result = %d\n", result);
         goto Release;
     }
 
-    /* Fill the memory block */
-    pIMem->pVTbl->Fill(pIMem, name, 'a', 9);
-
-
-    /* Free the memory block */
-    pIMem->pVTbl->Free(pIMem, name);
+    result = CKD_Tree_Test_Events(pIBus, pIMem, pIStdIO);
+    pIStdIO->pVTbl->printf(pIStdIO, "\nKD_Tree connection tests: %s\n",
+        result == ERR_ECO_SUCCESS ? "PASS" : "FAIL");
+    if (testsFailed != 0) {
+        result = ERR_ECO_FAIL;
+    }
 
 Release:
 

@@ -26,6 +26,10 @@
     {
       "name": "Eco.String.C89",
       "id": "58774b94-7ed3-4989-9c0a-a75c90b934fc"
+    },
+    {
+      "name": "Eco.List1",
+      "id": "53884afc-93c4-48ec-aa92-9c8d3a562281"
     }
   ],
   "repositories": []
